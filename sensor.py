@@ -1,23 +1,14 @@
 """Support for reading data from a serial port."""
-import asyncio
 import json
 import logging
 
-from serial import SerialException
-import serial_asyncio
-import voluptuous as vol
-
-
-from homeassistant.const import CONF_NAME, CONF_VALUE_TEMPLATE, EVENT_HOMEASSISTANT_STOP
-from homeassistant.core import callback
-import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity import Entity
 
 from .const import DOMAIN, RCSLINK_SENSOR
-from .exceptions import RCSLinkGatewayException
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.DEBUG)
+
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the sensors."""
@@ -28,7 +19,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
 class RCSLinkDataSensor(Entity):
     """Representation of a RCSLink sensor."""
-     
+
     def __init__(self):
         """Initialization"""
         self._gateway = None

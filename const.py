@@ -16,4 +16,3 @@ CONF_DSRDTR = "dsrdtr"
 CONF_VALUE_TEMPLATE = "template"
 
 ATTR_CODE = "code"
-

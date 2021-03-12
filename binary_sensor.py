@@ -1,11 +1,6 @@
 """Platform for sensor integration."""
 
-from homeassistant.helpers.entity import Entity
-from datetime import timedelta
 import logging
-
-from random import randrange
-
 from .const import DOMAIN, RCSLINK_GATEWAY
 
 from homeassistant.components.binary_sensor import (
@@ -43,7 +38,7 @@ class RCSLinkSensor(BinarySensorEntity):
 
     def get_gateway(self):
         """Returns the gateway instance from hass scope"""
-        return self._hass.data[DOMAIN][RCSLINK_GATEWAY]   
+        return self._hass.data[DOMAIN][RCSLINK_GATEWAY]
 
     @property
     def name(self):

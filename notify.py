@@ -1,8 +1,6 @@
 """Support for RCSLink services."""
 import logging
 
-import homeassistant.helpers.config_validation as cv
-
 from .const import DOMAIN, RCSLINK_GATEWAY
 from .exceptions import RCSLinkGatewayException
 

@@ -15,6 +15,7 @@ _LOGGER.setLevel(logging.DEBUG)
 
 NO_RCSLINK_FOUND = "No RCSLink found"
 
+
 class Gateway(Entity):
     """Gateway to interact with RCSLink."""
     _serial_loop_task = None
@@ -29,11 +30,11 @@ class Gateway(Entity):
 
     def get_sensor(self):
         """Returns the sensor instance from hass scope"""
-        return self._hass.data[DOMAIN][RCSLINK_SENSOR]  
+        return self._hass.data[DOMAIN][RCSLINK_SENSOR]
 
     def get_port_state(self):
-        """Returns the serial port state""" 
-        return self._port_state  
+        """Returns the serial port state"""
+        return self._port_state
 
     async def async_added_to_hass(self):
         """Handle when an entity is about to be added to Home Assistant."""
@@ -85,12 +86,16 @@ class Gateway(Entity):
                     rtscts=rtscts,
                     dsrdtr=dsrdtr,
                     **kwargs)
-                writer = asyncio.StreamWriter(transport, protocol, reader, loop)
+                writer = asyncio.StreamWriter(transport,
+                                              protocol,
+                                              reader,
+                                              loop)
 
             except SerialException as exc:
                 if not logged_error:
                     _LOGGER.exception(
-                        "Unable to connect to the serial device %s: %s. Will retry",
+                        "Unable to connect to the serial device %s: %s." +
+                        " Will retry",
                         device,
                         exc,
                     )
@@ -104,11 +109,12 @@ class Gateway(Entity):
                     try:
                         if(reader.at_eof()):
                             self._writer = None
-                            break; 
+                            break
                         line = await reader.readline()
                     except SerialException as exc:
                         _LOGGER.exception(
-                            "Error while reading serial device %s: %s", device, exc
+                            "Error while reading serial device %s: %s",
+                            device, exc
                         )
                         await self._handle_error()
                         break
@@ -122,7 +128,6 @@ class Gateway(Entity):
                             sensor.notify(line)
                         else:
                             _LOGGER.error('No sensor in HASS context')
-
 
     def send(self, code):
         """Send code."""
@@ -143,6 +148,7 @@ class Gateway(Entity):
         self._writer = None
         self._port_state = 'off'
         await asyncio.sleep(5)
+
 
 class CancellableStreamReaderProtocol(asyncio.StreamReaderProtocol):
     _cancellable_reader = None
