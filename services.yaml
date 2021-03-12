@@ -1,0 +1,6 @@
+send:
+  description: Sends RCSwitch code
+  fields:
+    code:
+      description: Code to send
+      example: FF00FF00

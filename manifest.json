@@ -1,0 +1,9 @@
+{
+    "domain": "rcslink",
+    "name": "RCSLink",
+    "documentation": "todo",
+    "requirements": ["pyserial-asyncio==0.5"],
+    "codeowners": ["@me"],
+    "config_flow": true,
+    "version": "0.0.1"
+  }

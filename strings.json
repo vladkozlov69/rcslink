@@ -1,0 +1,27 @@
+
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up RCSLink Modem",
+        "description": "Are you sure you want to set up RCSLink?"
+      }
+    },
+    "abort": {
+      "one_instance_allowed": "Only a single instance is necessary.",
+      "wrong_server_id": "Server id is not valid"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "serial_port": "Serial port"
+        }
+      }
+    },
+    "error": {
+      "retrieve_error": "Error retrieving servers list"
+    }
+  }
+}
