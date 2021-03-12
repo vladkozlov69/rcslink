@@ -43,7 +43,7 @@ class RCSLinkSensor(BinarySensorEntity):
 
     def get_gateway(self):
         """Returns the gateway instance from hass scope"""
-        return self._hass.data[DOMAIN][RCSLINK_GATEWAY]
+        return self._hass.data[DOMAIN][RCSLINK_GATEWAY]   
 
     @property
     def name(self):
@@ -79,5 +79,5 @@ class RCSLinkSensor(BinarySensorEntity):
         This is the only method that should fetch new data for Home Assistant.
         """
         gateway = self.get_gateway()
-
-        self._port_status = gateway.get_port_state()
+        if(gateway is not None):
+            self._port_status = gateway.get_port_state()

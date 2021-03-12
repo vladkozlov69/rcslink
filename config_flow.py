@@ -18,7 +18,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class RCSLinkConfigFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
-    """Example config flow."""
+    """RCSLink config flow."""
     @staticmethod
     @callback
     def async_get_options_flow(config_entry):

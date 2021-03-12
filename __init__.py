@@ -71,6 +71,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 
 
 _LOGGER = logging.getLogger(__name__)
+_LOGGER.setLevel(logging.DEBUG)
 
 @asyncio.coroutine
 def async_setup(hass, config):
@@ -89,18 +90,17 @@ async def async_setup_entry(hass, config_entry):
 
     @callback
     def handle_send_code(call):
-        """Handle the sms sending service call."""
-        print(call.data)
+        """Handle the sending service call."""
         code = call.data.get(ATTR_CODE)
         get_rcslink_service(hass).send(code)
 
     hass.data.setdefault(DOMAIN, {})
 
-    _LOGGER.warn("Before create_rcslink_gateway")
+    _LOGGER.debug("Before create_rcslink_gateway")
 
     gateway = create_rcslink_gateway(config_entry, hass)
 
-    _LOGGER.warn("After create_rcslink_gateway")
+    _LOGGER.debug("After create_rcslink_gateway")
 
     if not gateway:
         return False
