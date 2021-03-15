@@ -8,7 +8,7 @@ import asyncio
 from homeassistant.core import callback
 from homeassistant.helpers.entity import Entity
 from .const import DOMAIN, RCSLINK_SENSOR, CONF_SERIAL_PORT
-
+from .exceptions import RCSLinkGatewayException
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.DEBUG)
@@ -134,7 +134,10 @@ class Gateway(Entity):
         if self._writer is not None:
             self._writer.write(str.encode(code))
             self._writer.drain()
-        _LOGGER.info('Code %s sent', code)
+            _LOGGER.info('Code %s sent', code)
+        else:
+            _LOGGER.exception('RCSLink Serial port unavailable')
+            raise RCSLinkGatewayException('RCSLink Serial port unavailable')
 
     @callback
     def stop_serial_read(self, event):
