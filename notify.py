@@ -29,3 +29,19 @@ class RCSLinkService:
     def send(self, code):
         """Send RC code."""
         self.gateway.send(code)
+
+    def register(self, code):
+        """Send RC code."""
+        self.gateway.send('REGISTER ' + code)
+
+    def forget(self, code):
+        """Send RC code."""
+        self.gateway.send('DELETE ' + code)
+
+    def dump(self):
+        """Lists RC codes."""
+        self.gateway.send('LIST')
+
+    def learn(self):
+        """Lists RC codes."""
+        self.gateway.send('LEARN')

@@ -33,6 +33,11 @@ RCS_SEND_SERVICE_SCHEMA = vol.Schema(
     }
 )
 
+RCS_LIST_SERVICE_SCHEMA = vol.Schema(
+    {
+    }
+)
+
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Optional(CONF_SERIAL_PORT): cv.string,
@@ -66,6 +71,28 @@ async def async_setup_entry(hass, config_entry):
         code = call.data.get(ATTR_CODE)
         get_rcslink_service(hass).send(code)
 
+    @callback
+    def handle_register_code(call):
+        """Handle the register service call."""
+        code = call.data.get(ATTR_CODE)
+        get_rcslink_service(hass).register(code)
+
+    @callback
+    def handle_remove_code(call):
+        """Handle the forget service call."""
+        code = call.data.get(ATTR_CODE)
+        get_rcslink_service(hass).forget(code)
+
+    @callback
+    def handle_dump_codes(call):
+        """Handle the dump service call."""
+        get_rcslink_service(hass).dump()
+
+    @callback
+    def handle_learn_codes(call):
+        """Handle the learn service call."""
+        get_rcslink_service(hass).learn()
+
     hass.data.setdefault(DOMAIN, {})
 
     _LOGGER.debug("Before create_rcslink_gateway")
@@ -81,6 +108,18 @@ async def async_setup_entry(hass, config_entry):
 
     hass.services.async_register(DOMAIN, 'send', handle_send_code,
                                  schema=RCS_SEND_SERVICE_SCHEMA)
+
+    hass.services.async_register(DOMAIN, 'register', handle_register_code,
+                                 schema=RCS_SEND_SERVICE_SCHEMA)
+
+    hass.services.async_register(DOMAIN, 'forget', handle_remove_code,
+                                 schema=RCS_SEND_SERVICE_SCHEMA)
+
+    hass.services.async_register(DOMAIN, 'list', handle_dump_codes,
+                                 schema=RCS_LIST_SERVICE_SCHEMA)
+
+    hass.services.async_register(DOMAIN, 'learn', handle_learn_codes,
+                                 schema=RCS_LIST_SERVICE_SCHEMA)
 
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(config_entry,

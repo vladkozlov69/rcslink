@@ -121,7 +121,7 @@ class Gateway(Entity):
                     else:
                         line = line.decode("utf-8").strip()
 
-                        _LOGGER.debug("Received: %s", line)
+                        # _LOGGER.debug("Received: %s", line)
 
                         sensor = self.get_sensor()
                         if (sensor is not None):
