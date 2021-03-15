@@ -28,7 +28,7 @@ class RCSLinkService:
 
     def send(self, code):
         """Send RC code."""
-        self.gateway.send(code)
+        self.gateway.send('SEND ' + code)
 
     def register(self, code):
         """Send RC code."""
