@@ -72,10 +72,11 @@ async def async_setup_entry(hass, config_entry):
         get_rcslink_service(hass).send(code)
 
     @callback
-    def handle_register_code(call):
+    async def handle_register_code(call):
         """Handle the register service call."""
         code = call.data.get(ATTR_CODE)
-        get_rcslink_service(hass).register(code)
+        svc = get_rcslink_service(hass)
+        await svc.register(code)
 
     @callback
     def handle_remove_code(call):
@@ -131,6 +132,10 @@ async def async_setup_entry(hass, config_entry):
     )
 
     await gateway.async_added_to_hass()
+
+    notifier = get_rcslink_service(hass)
+
+    await notifier.async_added_to_hass()
 
     hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP,
                                gateway.stop_serial_read)

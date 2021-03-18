@@ -7,7 +7,7 @@ import asyncio
 
 from homeassistant.core import callback
 from homeassistant.helpers.entity import Entity
-from .const import DOMAIN, RCSLINK_SENSOR, CONF_SERIAL_PORT
+from .const import DOMAIN, RCSLINK_SENSOR, CONF_SERIAL_PORT, RCSLINK_SENDER
 from .exceptions import RCSLinkGatewayException
 
 _LOGGER = logging.getLogger(__name__)
@@ -105,6 +105,11 @@ class Gateway(Entity):
                 logged_error = False
                 self._port_state = 'on'
                 self._writer = writer
+                # Send registered codes to remote
+                if RCSLINK_SENDER in self._hass.data[DOMAIN]:
+                    sender = self._hass.data[DOMAIN][RCSLINK_SENDER]
+                    await sender.refresh_codes()
+
                 while True:
                     try:
                         if(reader.at_eof()):
@@ -121,20 +126,24 @@ class Gateway(Entity):
                     else:
                         line = line.decode("utf-8").strip()
 
-                        # _LOGGER.debug("Received: %s", line)
+                        if (line.startswith('#:LEARNED ')):
+                            code = line.replace('#:LEARNED ', '')
+                            sender = self.get_sender()
+                            if (sender is not None):
+                                await sender.add_code(code)
 
                         sensor = self.get_sensor()
                         if (sensor is not None):
-                            sensor.notify(line)
+                            await sensor.notify(line)
                         else:
                             _LOGGER.error('No sensor in HASS context')
 
     def send(self, code):
         """Send code."""
         if self._writer is not None:
-            self._writer.write(str.encode(code))
+            self._writer.write(str.encode(code + '\n'))
             self._writer.drain()
-            _LOGGER.info('Code %s sent', code)
+            _LOGGER.info('>> %s', code)
         else:
             _LOGGER.exception('RCSLink Serial port unavailable')
             raise RCSLinkGatewayException('RCSLink Serial port unavailable')
@@ -145,6 +154,11 @@ class Gateway(Entity):
         _LOGGER.warn("Stopping serial read")
         if self._serial_loop_task:
             self._serial_loop_task.cancel()
+
+    def get_sender(self):
+        if RCSLINK_SENDER in self._hass.data[DOMAIN]:
+            return self._hass.data[DOMAIN][RCSLINK_SENDER]
+        return None
 
     async def _handle_error(self):
         """Handle error for serial connection."""
