@@ -25,6 +25,7 @@ def get_rcslink_service(hass):
 
     if RCSLINK_SENDER not in hass.data[DOMAIN]:
         service = RCSLinkService(
+            hass,
             gateway,
             Store(hass, CODE_STORAGE_VERSION, 'rcslink_codes'))
         hass.data[DOMAIN][RCSLINK_SENDER] = service
@@ -35,8 +36,9 @@ def get_rcslink_service(hass):
 class RCSLinkService(Entity):
     """Implement the sender service for RCSLink."""
 
-    def __init__(self, gateway, codes):
+    def __init__(self, hass, gateway, codes):
         """Initialize the service."""
+        self._hass = hass
         self._gateway = gateway
         self._code_storage = codes
         self._codes = set()
@@ -65,6 +67,7 @@ class RCSLinkService(Entity):
     async def refresh_codes(self):
         """Sends all codes to device"""
         for code in self._codes:
+            self._hass.bus.fire('my_event_name', {'param1': 'value1'})
             await self._gateway.send('REGISTER ' + code)
 
     async def forget(self, code):
