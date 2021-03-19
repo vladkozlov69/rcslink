@@ -20,3 +20,7 @@ learn:
   description: Starts sensor learn for 30 seconds
 list:
   description: Dumps sensor's learned codes
+debug:
+  description: Starts sensor debug
+clear:
+  description: Clears sensor state

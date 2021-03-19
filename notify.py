@@ -47,9 +47,9 @@ class RCSLinkService(Entity):
         self._codes.update(await self._code_storage.async_load() or set())
         await self.refresh_codes()
 
-    def send(self, code):
+    async def send(self, code):
         """Send RC code."""
-        self._gateway.send('SEND ' + code)
+        await self._gateway.send('SEND ' + code)
 
     async def register(self, code):
         """Send RC code."""
@@ -65,19 +65,23 @@ class RCSLinkService(Entity):
     async def refresh_codes(self):
         """Sends all codes to device"""
         for code in self._codes:
-            self._gateway.send('REGISTER ' + code)
+            await self._gateway.send('REGISTER ' + code)
 
-    def forget(self, code):
+    async def forget(self, code):
         """Send RC code."""
-        self._gateway.send('DELETE ' + code)
+        await self._gateway.send('DELETE ' + code)
 
-    def dump(self):
+    async def dump(self):
         """Lists RC codes."""
-        self._gateway.send('LIST')
+        await self._gateway.send('LIST')
 
-    def learn(self):
+    async def debug(self):
         """Lists RC codes."""
-        self._gateway.send('LEARN')
+        await self._gateway.send('DEBUG')
+
+    async def learn(self):
+        """Lists RC codes."""
+        await self._gateway.send('LEARN')
 
     @callback
     def get_codes_list(self):

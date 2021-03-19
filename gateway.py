@@ -138,11 +138,11 @@ class Gateway(Entity):
                         else:
                             _LOGGER.error('No sensor in HASS context')
 
-    def send(self, code):
+    async def send(self, code):
         """Send code."""
         if self._writer is not None:
             self._writer.write(str.encode(code + '\n'))
-            self._writer.drain()
+            await self._writer.drain()
             _LOGGER.info('>> %s', code)
         else:
             _LOGGER.exception('RCSLink Serial port unavailable')

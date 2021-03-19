@@ -5,6 +5,7 @@ import logging
 from homeassistant.helpers.entity import Entity
 
 from .const import DOMAIN, RCSLINK_SENSOR
+from .exceptions import RCSLinkGatewayException
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.DEBUG)
@@ -15,6 +16,16 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     sensor = RCSLinkDataSensor()
     hass.data[DOMAIN][RCSLINK_SENSOR] = sensor
     async_add_entities([sensor], True)
+
+
+def get_rcslink_sensor(hass):
+    """Get the RCSLink sensor."""
+
+    if RCSLINK_SENSOR not in hass.data[DOMAIN]:
+        _LOGGER.error("RCSLink sensor not founde")
+        raise RCSLinkGatewayException("RCSLink sensor not found")
+
+    return hass.data[DOMAIN][RCSLINK_SENSOR]
 
 
 class RCSLinkDataSensor(Entity):
@@ -40,6 +51,11 @@ class RCSLinkDataSensor(Entity):
                 self._attributes = data
             self._state = line
             self.async_write_ha_state()
+
+    async def clear(self):
+        _LOGGER.info('State cleared')
+        self._state = ''
+        self.async_write_ha_state()
 
     @property
     def name(self):
