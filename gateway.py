@@ -7,8 +7,9 @@ import asyncio
 
 from homeassistant.core import callback
 from homeassistant.helpers.entity import Entity
-from .const import DOMAIN, RCSLINK_SENSOR, CONF_SERIAL_PORT, RCSLINK_SENDER
+from .const import DOMAIN, RCSLINK_SENSOR, CONF_SERIAL_PORT
 from .exceptions import RCSLinkGatewayException
+from .sender import get_rcslink_service
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.DEBUG)
@@ -27,7 +28,7 @@ class Gateway(Entity):
         self._hass = hass
         self._writer = None
         self._config_entry = config_entry
-        hass.bus.async_listen("rcslink_send_command", 
+        hass.bus.async_listen("rcslink_send_command",
                               self._handle_send_command)
 
     async def _handle_send_command(self, call):
@@ -115,12 +116,8 @@ class Gateway(Entity):
                 _LOGGER.info('Port ready')
                 _LOGGER.info(self._hass.data[DOMAIN])
                 # Send registered codes to remote
-                if RCSLINK_SENDER in self._hass.data[DOMAIN]:
-                    sender = self._hass.data[DOMAIN][RCSLINK_SENDER]
-                    _LOGGER.info(sender.ver())
-                    await sender.refresh_codes('Writer exists')
-                else:
-                    _LOGGER.info('no sender in context')
+                sender = self.get_sender()
+                await sender.refresh_codes()
 
                 _LOGGER.info('Entering read loop')
                 while True:
@@ -169,9 +166,7 @@ class Gateway(Entity):
             self._serial_loop_task.cancel()
 
     def get_sender(self):
-        if RCSLINK_SENDER in self._hass.data[DOMAIN]:
-            return self._hass.data[DOMAIN][RCSLINK_SENDER]
-        return None
+        return get_rcslink_service(self._hass)
 
     async def _handle_error(self):
         """Handle error for serial connection."""

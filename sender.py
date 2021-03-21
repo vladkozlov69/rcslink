@@ -1,11 +1,9 @@
 """Support for RCSLink services."""
 import logging
-import asyncio
 
 from .const import DOMAIN, RCSLINK_GATEWAY, RCSLINK_SENDER
 from .exceptions import RCSLinkGatewayException
 
-from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.storage import Store
 from homeassistant.core import callback
 
@@ -45,16 +43,9 @@ class RCSLinkService():
         self._codes = set()
         hass.data[DOMAIN][RCSLINK_SENDER] = self
 
-        # hass.data[DOMAIN]['sender'] = self
-
     async def fire_event_command(self, command):
         self._hass.bus.async_fire('rcslink_send_command',
                                   {'command': command})
-
-    # async def async_added_to_hass(self):
-    #     _LOGGER.info('async_added_to_hass')
-    #     self._codes.update(await self._code_storage.async_load() or set())
-    #     await self.refresh_codes('2')
 
     async def send(self, code):
         """Send RC code."""
@@ -63,18 +54,17 @@ class RCSLinkService():
     async def register(self, code):
         """Send RC code."""
         await self.add_code(code)
-        await self.refresh_codes('3')
+        await self.refresh_codes()
 
     async def add_code(self, code):
         self._codes.update([code])
         self._code_storage.async_delay_save(self.get_codes_list,
                                             CODE_SAVE_DELAY)
 
-    async def refresh_codes(self, msg):
+    async def refresh_codes(self):
         """Sends all codes to device"""
         self._codes.update(await self._code_storage.async_load() or set())
         for code in self._codes:
-            _LOGGER.info(msg)
             await self.fire_event_command('REGISTER ' + code)
 
     async def forget(self, code):
@@ -100,6 +90,3 @@ class RCSLinkService():
     def get_codes_list(self):
         """Return a dictionary of codes."""
         return list(self._codes)
-
-    def ver(self):
-        return 1

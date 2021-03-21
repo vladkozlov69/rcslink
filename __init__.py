@@ -155,9 +155,7 @@ async def async_setup_entry(hass, config_entry):
 
     await gateway.async_added_to_hass()
 
-    notifier = get_rcslink_service(hass)
-
-    # await notifier.async_added_to_hass()
+    get_rcslink_service(hass)
 
     hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP,
                                gateway.stop_serial_read)

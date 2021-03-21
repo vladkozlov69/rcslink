@@ -39,8 +39,8 @@ class RCSLinkDataSensor(Entity):
         self._state = None
 
     async def notify(self, line):
+        _LOGGER.info('<< %s', line)
         if (line.startswith('#')):
-            _LOGGER.info('<< %s', line)
             return
         try:
             data = json.loads(line)
