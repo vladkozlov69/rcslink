@@ -27,6 +27,13 @@ class Gateway(Entity):
         self._hass = hass
         self._writer = None
         self._config_entry = config_entry
+        hass.bus.async_listen("rcslink_send_command", 
+                              self._handle_send_command)
+
+    async def _handle_send_command(self, call):
+        _LOGGER.info("Event received: %s", call.data)
+        if 'command' in call.data:
+            await self.send(call.data['command'])
 
     def get_sensor(self):
         """Returns the sensor instance from hass scope"""
@@ -105,11 +112,17 @@ class Gateway(Entity):
                 logged_error = False
                 self._port_state = 'on'
                 self._writer = writer
+                _LOGGER.info('Port ready')
+                _LOGGER.info(self._hass.data[DOMAIN])
                 # Send registered codes to remote
                 if RCSLINK_SENDER in self._hass.data[DOMAIN]:
                     sender = self._hass.data[DOMAIN][RCSLINK_SENDER]
-                    await sender.refresh_codes()
+                    _LOGGER.info(sender.ver())
+                    await sender.refresh_codes('Writer exists')
+                else:
+                    _LOGGER.info('no sender in context')
 
+                _LOGGER.info('Entering read loop')
                 while True:
                     try:
                         if(reader.at_eof()):

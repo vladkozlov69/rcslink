@@ -1,5 +1,6 @@
 """Support for RCSLink services."""
 import logging
+import asyncio
 
 from .const import DOMAIN, RCSLINK_GATEWAY, RCSLINK_SENDER
 from .exceptions import RCSLinkGatewayException
@@ -21,19 +22,19 @@ def get_rcslink_service(hass):
         _LOGGER.error("RCSLink gateway not found, cannot initialize service")
         raise RCSLinkGatewayException("RCSLink gateway not found")
 
-    gateway = hass.data[DOMAIN][RCSLINK_GATEWAY]
-
     if RCSLINK_SENDER not in hass.data[DOMAIN]:
+        _LOGGER.info("creating RCSLinkService")
+
         service = RCSLinkService(
             hass,
-            gateway,
+            hass.data[DOMAIN][RCSLINK_GATEWAY],
             Store(hass, CODE_STORAGE_VERSION, 'rcslink_codes'))
         hass.data[DOMAIN][RCSLINK_SENDER] = service
 
     return hass.data[DOMAIN][RCSLINK_SENDER]
 
 
-class RCSLinkService(Entity):
+class RCSLinkService():
     """Implement the sender service for RCSLink."""
 
     def __init__(self, hass, gateway, codes):
@@ -42,51 +43,63 @@ class RCSLinkService(Entity):
         self._gateway = gateway
         self._code_storage = codes
         self._codes = set()
+        hass.data[DOMAIN][RCSLINK_SENDER] = self
+
         # hass.data[DOMAIN]['sender'] = self
 
-    async def async_added_to_hass(self):
-        _LOGGER.info('async_added_to_hass')
-        self._codes.update(await self._code_storage.async_load() or set())
-        await self.refresh_codes()
+    async def fire_event_command(self, command):
+        self._hass.bus.async_fire('rcslink_send_command',
+                                  {'command': command})
+
+    # async def async_added_to_hass(self):
+    #     _LOGGER.info('async_added_to_hass')
+    #     self._codes.update(await self._code_storage.async_load() or set())
+    #     await self.refresh_codes('2')
 
     async def send(self, code):
         """Send RC code."""
-        await self._gateway.send('SEND ' + code)
+        await self.fire_event_command('SEND ' + code)
 
     async def register(self, code):
         """Send RC code."""
         await self.add_code(code)
-        # self._gateway.send('REGISTER ' + code)
-        await self.refresh_codes()
+        await self.refresh_codes('3')
 
     async def add_code(self, code):
         self._codes.update([code])
         self._code_storage.async_delay_save(self.get_codes_list,
                                             CODE_SAVE_DELAY)
 
-    async def refresh_codes(self):
+    async def refresh_codes(self, msg):
         """Sends all codes to device"""
+        self._codes.update(await self._code_storage.async_load() or set())
         for code in self._codes:
-            self._hass.bus.fire('my_event_name', {'param1': 'value1'})
-            await self._gateway.send('REGISTER ' + code)
+            _LOGGER.info(msg)
+            await self.fire_event_command('REGISTER ' + code)
 
     async def forget(self, code):
         """Send RC code."""
-        await self._gateway.send('DELETE ' + code)
+        self._codes.discard(code)
+        self._code_storage.async_delay_save(self.get_codes_list,
+                                            CODE_SAVE_DELAY)
+        await self.fire_event_command('DELETE ' + code)
 
     async def dump(self):
         """Lists RC codes."""
-        await self._gateway.send('LIST')
+        await self.fire_event_command('LIST')
 
     async def debug(self):
         """Lists RC codes."""
-        await self._gateway.send('DEBUG')
+        await self.fire_event_command('DEBUG')
 
     async def learn(self):
         """Lists RC codes."""
-        await self._gateway.send('LEARN')
+        await self.fire_event_command('LEARN')
 
     @callback
     def get_codes_list(self):
         """Return a dictionary of codes."""
         return list(self._codes)
+
+    def ver(self):
+        return 1

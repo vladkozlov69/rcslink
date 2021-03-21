@@ -16,7 +16,7 @@ from .const import DOMAIN, RCSLINK_GATEWAY, CONF_SERIAL_PORT
 from .const import ATTR_CODE
 
 from .gateway import create_rcslink_gateway
-from .notify import get_rcslink_service
+from .sender import get_rcslink_service
 from .sensor import get_rcslink_sensor
 
 DEFAULT_NAME = "Serial Sensor"
@@ -157,7 +157,7 @@ async def async_setup_entry(hass, config_entry):
 
     notifier = get_rcslink_service(hass)
 
-    await notifier.async_added_to_hass()
+    # await notifier.async_added_to_hass()
 
     hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP,
                                gateway.stop_serial_read)
