@@ -1,8 +1,7 @@
 """Support for RCSLink services."""
 import logging
 
-from .const import DOMAIN, RCSLINK_GATEWAY, RCSLINK_SENDER
-from .exceptions import RCSLinkGatewayException
+from .const import DOMAIN, RCSLINK_SENDER
 
 from homeassistant.helpers.storage import Store
 from homeassistant.core import callback
@@ -16,16 +15,11 @@ CODE_SAVE_DELAY = 1
 def get_rcslink_service(hass):
     """Get the RCSLink service."""
 
-    if RCSLINK_GATEWAY not in hass.data[DOMAIN]:
-        _LOGGER.error("RCSLink gateway not found, cannot initialize service")
-        raise RCSLinkGatewayException("RCSLink gateway not found")
-
     if RCSLINK_SENDER not in hass.data[DOMAIN]:
         _LOGGER.info("creating RCSLinkService")
 
         service = RCSLinkService(
             hass,
-            hass.data[DOMAIN][RCSLINK_GATEWAY],
             Store(hass, CODE_STORAGE_VERSION, 'rcslink_codes'))
         hass.data[DOMAIN][RCSLINK_SENDER] = service
 
@@ -35,10 +29,9 @@ def get_rcslink_service(hass):
 class RCSLinkService():
     """Implement the sender service for RCSLink."""
 
-    def __init__(self, hass, gateway, codes):
+    def __init__(self, hass, codes):
         """Initialize the service."""
         self._hass = hass
-        self._gateway = gateway
         self._code_storage = codes
         self._codes = set()
         hass.data[DOMAIN][RCSLINK_SENDER] = self

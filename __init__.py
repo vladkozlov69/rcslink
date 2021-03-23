@@ -2,7 +2,6 @@
 
 import asyncio
 import logging
-import serial_asyncio
 
 import voluptuous as vol
 
@@ -19,25 +18,13 @@ from .gateway import create_rcslink_gateway
 from .sender import get_rcslink_service
 from .sensor import get_rcslink_sensor
 
-DEFAULT_NAME = "Serial Sensor"
-DEFAULT_BAUDRATE = 9600
-DEFAULT_BYTESIZE = serial_asyncio.serial.EIGHTBITS
-DEFAULT_PARITY = serial_asyncio.serial.PARITY_NONE
-DEFAULT_STOPBITS = serial_asyncio.serial.STOPBITS_ONE
-DEFAULT_XONXOFF = False
-DEFAULT_RTSCTS = False
-DEFAULT_DSRDTR = False
-
 RCS_SEND_SERVICE_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_CODE): cv.string
     }
 )
 
-RCS_LIST_SERVICE_SCHEMA = vol.Schema(
-    {
-    }
-)
+RCS_EMPTY_SERVICE_SCHEMA = vol.Schema({})
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
@@ -133,16 +120,16 @@ async def async_setup_entry(hass, config_entry):
                                  schema=RCS_SEND_SERVICE_SCHEMA)
 
     hass.services.async_register(DOMAIN, 'list', handle_dump_codes,
-                                 schema=RCS_LIST_SERVICE_SCHEMA)
+                                 schema=RCS_EMPTY_SERVICE_SCHEMA)
 
     hass.services.async_register(DOMAIN, 'learn', handle_learn_codes,
-                                 schema=RCS_LIST_SERVICE_SCHEMA)
+                                 schema=RCS_EMPTY_SERVICE_SCHEMA)
 
     hass.services.async_register(DOMAIN, 'debug', handle_debug,
-                                 schema=RCS_LIST_SERVICE_SCHEMA)
+                                 schema=RCS_EMPTY_SERVICE_SCHEMA)
 
     hass.services.async_register(DOMAIN, 'clear', handle_clear,
-                                 schema=RCS_LIST_SERVICE_SCHEMA)
+                                 schema=RCS_EMPTY_SERVICE_SCHEMA)
 
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(config_entry,

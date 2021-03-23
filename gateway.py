@@ -117,7 +117,6 @@ class Gateway(Entity):
                 self._hass.bus.async_fire('rcslink_connected', {})
                 self._writer = writer
                 _LOGGER.info('Port ready')
-                _LOGGER.info(self._hass.data[DOMAIN])
                 # Send registered codes to remote
                 sender = self.get_sender()
                 await sender.refresh_codes()
