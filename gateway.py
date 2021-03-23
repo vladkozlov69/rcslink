@@ -22,6 +22,7 @@ class Gateway(Entity):
     _serial_loop_task = None
     _port_state = None
     _config_entry = None
+    _notified_disconnect = False
 
     def __init__(self, config_entry, hass):
         """Initialize the RCSLink gateway."""
@@ -111,7 +112,9 @@ class Gateway(Entity):
                 await self._handle_error()
             else:
                 logged_error = False
+                self._notified_disconnect = False
                 self._port_state = 'on'
+                self._hass.bus.async_fire('rcslink_connected', {})
                 self._writer = writer
                 _LOGGER.info('Port ready')
                 _LOGGER.info(self._hass.data[DOMAIN])
@@ -172,6 +175,9 @@ class Gateway(Entity):
         """Handle error for serial connection."""
         self._writer = None
         self._port_state = 'off'
+        if (not self._notified_disconnect):
+            self._notified_disconnect = True
+            self._hass.bus.async_fire('rcslink_disconnected', {})
         await asyncio.sleep(5)
 
 
