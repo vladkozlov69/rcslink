@@ -6,7 +6,6 @@ import serial_asyncio
 import asyncio
 
 from homeassistant.core import callback
-from homeassistant.helpers.entity import Entity
 from .const import DOMAIN, RCSLINK_SENSOR, CONF_SERIAL_PORT
 from .exceptions import RCSLinkGatewayException
 from .sender import get_rcslink_service
@@ -17,7 +16,7 @@ _LOGGER.setLevel(logging.DEBUG)
 NO_RCSLINK_FOUND = "No RCSLink found"
 
 
-class Gateway(Entity):
+class Gateway():
     """Gateway to interact with RCSLink."""
     _serial_loop_task = None
     _port_state = None
@@ -47,8 +46,10 @@ class Gateway(Entity):
 
     async def async_added_to_hass(self):
         """Handle when an entity is about to be added to Home Assistant."""
-        _LOGGER.debug('Starting serial loop task')
-        serial_port = self._config_entry.options[CONF_SERIAL_PORT]
+        serial_port = self._config_entry.data[CONF_SERIAL_PORT]
+        _LOGGER.debug('Starting serial loop task, port = %s',
+                      serial_port)
+
         self._serial_loop_task = self._hass.loop.create_task(
             self.serial_read(
                 serial_port,
@@ -116,7 +117,7 @@ class Gateway(Entity):
                 self._port_state = 'on'
                 self._hass.bus.async_fire('rcslink_connected', {})
                 self._writer = writer
-                _LOGGER.info('Port ready')
+                _LOGGER.debug('Port ready')
                 # Send registered codes to remote
                 sender = self.get_sender()
                 await sender.refresh_codes()

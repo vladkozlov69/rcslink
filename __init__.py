@@ -1,17 +1,18 @@
 """The RCSLink component."""
 
-import asyncio
 import logging
 
 import voluptuous as vol
 
 from homeassistant.core import callback
 
+from homeassistant.config_entries import SOURCE_IMPORT
+
 import homeassistant.helpers.config_validation as cv
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP
 
-from .const import DOMAIN, RCSLINK_GATEWAY, CONF_SERIAL_PORT
+from .const import DOMAIN, RCSLINK_GATEWAY, CONF_SERIAL_PORT, CONF_BAUDRATE
 from .const import ATTR_CODE
 
 from .gateway import create_rcslink_gateway
@@ -26,9 +27,10 @@ RCS_SEND_SERVICE_SCHEMA = vol.Schema(
 
 RCS_EMPTY_SERVICE_SCHEMA = vol.Schema({})
 
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
+PLATFORM_SCHEMA = [].extend(
     {
-        vol.Optional(CONF_SERIAL_PORT): cv.string,
+        vol.Required(CONF_SERIAL_PORT): cv.string,
+        vol.Optional(CONF_BAUDRATE): cv.positive_int,
     }
 )
 
@@ -37,16 +39,16 @@ _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.DEBUG)
 
 
-@asyncio.coroutine
-def async_setup(hass, config):
-    """Import integration from config."""
-    # if DOMAIN in config:
-    #     hass.async_create_task(
-    #         hass.config_entries.flow.async_init(
-    #             DOMAIN, context={"source": SOURCE_IMPORT},
-    #             data=config[DOMAIN]
-    #         )
-    #     )
+async def async_setup(hass, config):
+    """Set up the Freebox integration."""
+    if DOMAIN in config:
+        hass.async_create_task(
+            hass.config_entries.flow.async_init(
+                DOMAIN, context={"source": SOURCE_IMPORT},
+                data=config[DOMAIN]
+            )
+        )
+
     return True
 
 
