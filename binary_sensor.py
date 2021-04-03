@@ -35,6 +35,20 @@ class RCSLinkSensor(BinarySensorEntity):
         """Initialize the sensor."""
         self._state = None
         self._hass = hass
+        hass.bus.async_listen("rcslink_connected",
+                              self._handle_connected)
+        hass.bus.async_listen("rcslink_disconnected",
+                              self._handle_disconnected)
+
+    async def _handle_connected(self, call):
+        _LOGGER.info("rcslink_connected")
+        self._port_status = 'on'
+        self.async_write_ha_state()
+
+    async def _handle_disconnected(self, call):
+        _LOGGER.info("rcslink_disconnected")
+        self._port_status = 'off'
+        self.async_write_ha_state()
 
     def get_gateway(self):
         """Returns the gateway instance from hass scope"""

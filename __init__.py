@@ -1,31 +1,23 @@
 """The RCSLink component."""
 
-import asyncio
 import logging
-import serial_asyncio
 
 import voluptuous as vol
 
 from homeassistant.core import callback
 
+from homeassistant.config_entries import SOURCE_IMPORT
+
 import homeassistant.helpers.config_validation as cv
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP
 
-from .const import DOMAIN, RCSLINK_GATEWAY, CONF_SERIAL_PORT
+from .const import DOMAIN, RCSLINK_GATEWAY, CONF_SERIAL_PORT, CONF_BAUDRATE
 from .const import ATTR_CODE
 
 from .gateway import create_rcslink_gateway
-from .notify import get_rcslink_service
-
-DEFAULT_NAME = "Serial Sensor"
-DEFAULT_BAUDRATE = 9600
-DEFAULT_BYTESIZE = serial_asyncio.serial.EIGHTBITS
-DEFAULT_PARITY = serial_asyncio.serial.PARITY_NONE
-DEFAULT_STOPBITS = serial_asyncio.serial.STOPBITS_ONE
-DEFAULT_XONXOFF = False
-DEFAULT_RTSCTS = False
-DEFAULT_DSRDTR = False
+from .sender import get_rcslink_service
+from .sensor import get_rcslink_sensor
 
 RCS_SEND_SERVICE_SCHEMA = vol.Schema(
     {
@@ -33,14 +25,12 @@ RCS_SEND_SERVICE_SCHEMA = vol.Schema(
     }
 )
 
-RCS_LIST_SERVICE_SCHEMA = vol.Schema(
-    {
-    }
-)
+RCS_EMPTY_SERVICE_SCHEMA = vol.Schema({})
 
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
+PLATFORM_SCHEMA = [].extend(
     {
-        vol.Optional(CONF_SERIAL_PORT): cv.string,
+        vol.Required(CONF_SERIAL_PORT): cv.string,
+        vol.Optional(CONF_BAUDRATE): cv.positive_int,
     }
 )
 
@@ -49,16 +39,16 @@ _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.DEBUG)
 
 
-@asyncio.coroutine
-def async_setup(hass, config):
-    """Import integration from config."""
-    # if DOMAIN in config:
-    #     hass.async_create_task(
-    #         hass.config_entries.flow.async_init(
-    #             DOMAIN, context={"source": SOURCE_IMPORT},
-    #             data=config[DOMAIN]
-    #         )
-    #     )
+async def async_setup(hass, config):
+    """Set up the Freebox integration."""
+    if DOMAIN in config:
+        hass.async_create_task(
+            hass.config_entries.flow.async_init(
+                DOMAIN, context={"source": SOURCE_IMPORT},
+                data=config[DOMAIN]
+            )
+        )
+
     return True
 
 
@@ -66,32 +56,48 @@ async def async_setup_entry(hass, config_entry):
     """Set up the RCS Link component."""
 
     @callback
-    def handle_send_code(call):
+    async def handle_send_code(call):
         """Handle the sending service call."""
         code = call.data.get(ATTR_CODE)
-        get_rcslink_service(hass).send(code)
+        svc = get_rcslink_service(hass)
+        await svc.send(code)
 
     @callback
-    def handle_register_code(call):
+    async def handle_register_code(call):
         """Handle the register service call."""
         code = call.data.get(ATTR_CODE)
-        get_rcslink_service(hass).register(code)
+        svc = get_rcslink_service(hass)
+        await svc.register(code)
 
     @callback
-    def handle_remove_code(call):
+    async def handle_remove_code(call):
         """Handle the forget service call."""
         code = call.data.get(ATTR_CODE)
-        get_rcslink_service(hass).forget(code)
+        svc = get_rcslink_service(hass)
+        await svc.forget(code)
 
     @callback
-    def handle_dump_codes(call):
+    async def handle_dump_codes(call):
         """Handle the dump service call."""
-        get_rcslink_service(hass).dump()
+        svc = get_rcslink_service(hass)
+        await svc.dump()
 
     @callback
-    def handle_learn_codes(call):
+    async def handle_learn_codes(call):
         """Handle the learn service call."""
-        get_rcslink_service(hass).learn()
+        svc = get_rcslink_service(hass)
+        await svc.learn()
+
+    @callback
+    async def handle_debug(call):
+        """Handle the learn service call."""
+        svc = get_rcslink_service(hass)
+        await svc.debug()
+
+    @callback
+    async def handle_clear(call):
+        sensor = get_rcslink_sensor(hass)
+        await sensor.clear()
 
     hass.data.setdefault(DOMAIN, {})
 
@@ -116,10 +122,16 @@ async def async_setup_entry(hass, config_entry):
                                  schema=RCS_SEND_SERVICE_SCHEMA)
 
     hass.services.async_register(DOMAIN, 'list', handle_dump_codes,
-                                 schema=RCS_LIST_SERVICE_SCHEMA)
+                                 schema=RCS_EMPTY_SERVICE_SCHEMA)
 
     hass.services.async_register(DOMAIN, 'learn', handle_learn_codes,
-                                 schema=RCS_LIST_SERVICE_SCHEMA)
+                                 schema=RCS_EMPTY_SERVICE_SCHEMA)
+
+    hass.services.async_register(DOMAIN, 'debug', handle_debug,
+                                 schema=RCS_EMPTY_SERVICE_SCHEMA)
+
+    hass.services.async_register(DOMAIN, 'clear', handle_clear,
+                                 schema=RCS_EMPTY_SERVICE_SCHEMA)
 
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setup(config_entry,
@@ -131,6 +143,8 @@ async def async_setup_entry(hass, config_entry):
     )
 
     await gateway.async_added_to_hass()
+
+    get_rcslink_service(hass)
 
     hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP,
                                gateway.stop_serial_read)

@@ -6,9 +6,9 @@ import serial_asyncio
 import asyncio
 
 from homeassistant.core import callback
-from homeassistant.helpers.entity import Entity
 from .const import DOMAIN, RCSLINK_SENSOR, CONF_SERIAL_PORT
 from .exceptions import RCSLinkGatewayException
+from .sender import get_rcslink_service
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.DEBUG)
@@ -16,17 +16,25 @@ _LOGGER.setLevel(logging.DEBUG)
 NO_RCSLINK_FOUND = "No RCSLink found"
 
 
-class Gateway(Entity):
+class Gateway():
     """Gateway to interact with RCSLink."""
     _serial_loop_task = None
     _port_state = None
     _config_entry = None
+    _notified_disconnect = False
 
     def __init__(self, config_entry, hass):
         """Initialize the RCSLink gateway."""
         self._hass = hass
         self._writer = None
         self._config_entry = config_entry
+        hass.bus.async_listen("rcslink_send_command",
+                              self._handle_send_command)
+
+    async def _handle_send_command(self, call):
+        _LOGGER.info("Event received: %s", call.data)
+        if 'command' in call.data:
+            await self.send(call.data['command'])
 
     def get_sensor(self):
         """Returns the sensor instance from hass scope"""
@@ -38,8 +46,10 @@ class Gateway(Entity):
 
     async def async_added_to_hass(self):
         """Handle when an entity is about to be added to Home Assistant."""
-        _LOGGER.debug('Starting serial loop task')
-        serial_port = self._config_entry.options[CONF_SERIAL_PORT]
+        serial_port = self._config_entry.data[CONF_SERIAL_PORT]
+        _LOGGER.debug('Starting serial loop task, port = %s',
+                      serial_port)
+
         self._serial_loop_task = self._hass.loop.create_task(
             self.serial_read(
                 serial_port,
@@ -103,8 +113,16 @@ class Gateway(Entity):
                 await self._handle_error()
             else:
                 logged_error = False
+                self._notified_disconnect = False
                 self._port_state = 'on'
+                self._hass.bus.async_fire('rcslink_connected', {})
                 self._writer = writer
+                _LOGGER.debug('Port ready')
+                # Send registered codes to remote
+                sender = self.get_sender()
+                await sender.refresh_codes()
+
+                _LOGGER.info('Entering read loop')
                 while True:
                     try:
                         if(reader.at_eof()):
@@ -121,20 +139,24 @@ class Gateway(Entity):
                     else:
                         line = line.decode("utf-8").strip()
 
-                        # _LOGGER.debug("Received: %s", line)
+                        if (line.startswith('#:LEARNED ')):
+                            code = line.replace('#:LEARNED ', '')
+                            sender = self.get_sender()
+                            if (sender is not None):
+                                await sender.add_code(code)
 
                         sensor = self.get_sensor()
                         if (sensor is not None):
-                            sensor.notify(line)
+                            await sensor.notify(line)
                         else:
                             _LOGGER.error('No sensor in HASS context')
 
-    def send(self, code):
+    async def send(self, code):
         """Send code."""
         if self._writer is not None:
-            self._writer.write(str.encode(code))
-            self._writer.drain()
-            _LOGGER.info('Code %s sent', code)
+            self._writer.write(str.encode(code + '\n'))
+            await self._writer.drain()
+            _LOGGER.info('>> %s', code)
         else:
             _LOGGER.exception('RCSLink Serial port unavailable')
             raise RCSLinkGatewayException('RCSLink Serial port unavailable')
@@ -146,10 +168,16 @@ class Gateway(Entity):
         if self._serial_loop_task:
             self._serial_loop_task.cancel()
 
+    def get_sender(self):
+        return get_rcslink_service(self._hass)
+
     async def _handle_error(self):
         """Handle error for serial connection."""
         self._writer = None
         self._port_state = 'off'
+        if (not self._notified_disconnect):
+            self._notified_disconnect = True
+            self._hass.bus.async_fire('rcslink_disconnected', {})
         await asyncio.sleep(5)
 
 

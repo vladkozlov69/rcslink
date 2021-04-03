@@ -4,6 +4,6 @@
     "documentation": "https://github.com/vladkozlov69/rcslink",
     "requirements": ["pyserial-asyncio==0.5"],
     "codeowners": ["@vladkozlov69"],
-    "config_flow": true,
+    "config_flow": false,
     "version": "0.0.1"
   }
