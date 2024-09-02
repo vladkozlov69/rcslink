@@ -134,13 +134,13 @@ async def async_setup_entry(hass, config_entry):
                                  schema=RCS_EMPTY_SERVICE_SCHEMA)
 
     hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(config_entry,
-                                                      "binary_sensor")
+        hass.config_entries.async_forward_entry_setups(config_entry,
+                                                      ["binary_sensor", "sensor"])
     )
 
-    hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(config_entry, "sensor")
-    )
+#    hass.async_create_task(
+#        hass.config_entries.async_forward_entry_setups(config_entry, "sensor")
+#    )
 
     await gateway.async_added_to_hass()
 

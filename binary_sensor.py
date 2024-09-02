@@ -4,7 +4,7 @@ import logging
 from .const import DOMAIN, RCSLINK_GATEWAY
 
 from homeassistant.components.binary_sensor import (
-    DEVICE_CLASS_CONNECTIVITY,
+    BinarySensorDeviceClass,
     BinarySensorEntity,
 )
 
@@ -67,7 +67,7 @@ class RCSLinkSensor(BinarySensorEntity):
     @property
     def device_class(self):
         """Return the class of this device, from component DEVICE_CLASSES."""
-        return DEVICE_CLASS_CONNECTIVITY
+        return BinarySensorDeviceClass.CONNECTIVITY
 
     @property
     def unique_id(self):
